@@ -27,25 +27,37 @@ public class UserDao {
 
     public int insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        return jdbcTemplate.update(sql,user.getAccount(), user.getPassword(), user.getEmail());
+        int hitRow = jdbcTemplate.update(sql, user.getAccount(), user.getPassword(), user.getEmail());
+        log.debug("Inserted {} row(s) for user account: {}", hitRow, user.getAccount());
+        return hitRow;
     }
 
     public void update(final User user) {
-        // todo
+        final var sql = "update users set account = ?, password = ?, email = ? where id = ?";
+        int hitRow = jdbcTemplate.update(sql,
+                user.getAccount(),
+                user.getPassword(),
+                user.getEmail(),
+                user.getId()
+        );
+        log.debug("Updated {} row(s) for user id: {}", hitRow, user.getId());
     }
 
     public List<User> findAll() {
-        // todo
-        return null;
+        return List.of();
     }
 
     public User findById(final Long id) {
         final var sql = "select id, account, password, email from users where id = ?";
-        return jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        User user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, id);
+        log.debug("Found user by id {}: {}", id, user != null ? user : "null");
+        return user;
     }
 
     public User findByAccount(final String account) {
-        // todo
-        return null;
+        final var sql = "select id, account, password, email from users where account = ?";
+        User user = jdbcTemplate.queryForObject(sql, USER_ROW_MAPPER, account);
+        log.debug("Found user by account '{}': {}", account, user != null ? user : "null");
+        return user;
     }
 }
