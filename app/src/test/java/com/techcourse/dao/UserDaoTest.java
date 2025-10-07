@@ -48,10 +48,11 @@ class UserDaoTest {
     void insert() {
         final var account = "insert-gugu";
         final var user = new User(account, "password", "hkkang@woowahan.com");
-        userDao.insert(user);
+
+        final var hitRow = userDao.insert(user);
 
         final var actual = userDao.findById(2L);
-
+        assertThat(hitRow).isEqualTo(1);
         assertThat(actual.getAccount()).isEqualTo(account);
     }
 

@@ -6,10 +6,6 @@ import com.interface21.jdbc.core.JdbcTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 
 public class UserDao {
@@ -29,9 +25,9 @@ public class UserDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void insert(final User user) {
+    public int insert(final User user) {
         final var sql = "insert into users (account, password, email) values (?, ?, ?)";
-        jdbcTemplate.update(sql,user.getAccount(), user.getPassword(), user.getEmail());
+        return jdbcTemplate.update(sql,user.getAccount(), user.getPassword(), user.getEmail());
     }
 
     public void update(final User user) {
