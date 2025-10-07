@@ -27,8 +27,8 @@ public class JdbcTemplate {
         return execute(sql, action);
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Long id) {
-        return query(sql, getPreparedStatementCallback(rowMapper, id));
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
+        return query(sql, getPreparedStatementCallback(rowMapper, parameters));
     }
 
 
@@ -46,9 +46,11 @@ public class JdbcTemplate {
         }
     }
 
-    private <T> PreparedStatementCallback<T> getPreparedStatementCallback(final RowMapper<T> rowMapper, final Long id) {
+    private <T> PreparedStatementCallback<T> getPreparedStatementCallback(final RowMapper<T> rowMapper, final Object[] parameters) {
         return ps -> {
-            ps.setLong(1, id);
+            for (int i = 0; i < parameters.length; i++) {
+                ps.setObject(i + 1, parameters[i]);
+            }
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
