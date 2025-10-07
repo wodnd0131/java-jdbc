@@ -23,35 +23,42 @@ public class JdbcTemplate {
         return execute(sql, getPreparedStatementCallback(parameters));
     }
 
+    public <T> T query(final String sql, final PreparedStatementCallback<T> action) {
+        return execute(sql, action);
+    }
+
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Long id) {
+        return query(sql, getPreparedStatementCallback(rowMapper, id));
+    }
+
+
     //https://github.com/spring-projects/spring-framework/blob/6aeb9d16e83c69d980f48a4a4f052bf52f31dfd0/spring-jdbc/src/main/java/org/springframework/jdbc/core/JdbcTemplate.java#L654
-    private  <T> T execute(final String sql, PreparedStatementCallback<T> action) {
-        Connection conn = null;
-        PreparedStatement ps = null;
-        try {
-            conn = dataSource.getConnection();
-            ps = conn.prepareStatement(sql);
+    private <T> T execute(final String sql, PreparedStatementCallback<T> action) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
 
             log.debug("query : {}", sql);
             return action.doInPreparedStatement(ps);
+
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
             throw new RuntimeException(e);
-        } finally {
-            try {
-                if (ps != null) {
-                    ps.close();
-                }
-            } catch (SQLException ignored) {}
-
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException ignored) {}
         }
     }
 
-    private static PreparedStatementCallback<Integer> getPreparedStatementCallback(Object[] parameters) {
+    private <T> PreparedStatementCallback<T> getPreparedStatementCallback(final RowMapper<T> rowMapper, final Long id) {
+        return ps -> {
+            ps.setLong(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rowMapper.mapRow(rs);
+                }
+                return null;
+            }
+        };
+    }
+
+    private PreparedStatementCallback<Integer> getPreparedStatementCallback(Object[] parameters) {
         return ps -> {
             for (int i = 0; i < parameters.length; i++) {
                 ps.setObject(i + 1, parameters[i]);
