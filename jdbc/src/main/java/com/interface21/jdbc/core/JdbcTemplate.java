@@ -1,6 +1,6 @@
 package com.interface21.jdbc.core;
 
-import com.interface21.jdbc.exception.CannotGetJdbcConnectionException;
+import com.interface21.jdbc.exception.DataAccessException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -74,7 +74,7 @@ public class JdbcTemplate {
 
         } catch (SQLException e) {
             log.error(e.getMessage(), e);
-            throw new RuntimeException(e);
+            throw new DataAccessException("Jdbc Data Access Failed",e);
         }
     }
 }
