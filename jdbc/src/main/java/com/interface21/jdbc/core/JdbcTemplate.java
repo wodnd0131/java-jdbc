@@ -1,5 +1,6 @@
 package com.interface21.jdbc.core;
 
+import com.interface21.jdbc.exception.CannotGetJdbcConnectionException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -20,53 +21,41 @@ public class JdbcTemplate {
         this.dataSource = dataSource;
     }
 
-    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... parameters) {
-        return query(sql, getSinglePreparedStatementCallback(rowMapper, parameters));
-    }
-
-    public <T> List<T> queryForList(final String sql,final RowMapper<T> rowMapper, final Object... parameters) {
-        return query(sql, getPreparedStatementCallbackForList(rowMapper, parameters));
-    }
-
-    public int update(final String sql,final Object... parameters) {
-        return execute(sql, getSinglePreparedStatementCallback(parameters));
-    }
-
-    private <T> T query(final String sql, final PreparedStatementCallback<T> action) {
-        return execute(sql, action);
-    }
-
-    public <T> PreparedStatementCallback<List<T>> getPreparedStatementCallbackForList(final RowMapper<T> rowMapper, final Object[] params) {
-        return ps -> {
+    public <T> T queryForObject(final String sql, final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, ps -> {
             setPreparedStatementParams(params, ps);
-
-            List<T> results = new ArrayList<>();
-            try (ResultSet rs = ps.executeQuery()) {
-                while (rs.next()) {
-                    results.add(rowMapper.mapRow(rs));
-                }
-            }
-            return results;
-        };
-    }
-
-    private <T> PreparedStatementCallback<T> getSinglePreparedStatementCallback(final RowMapper<T> rowMapper, final Object[] params) {
-        return ps -> {
-            setPreparedStatementParams(params, ps);
-
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     return rowMapper.mapRow(rs);
                 }
                 return null;
             }
-        };
+        });
     }
-    private PreparedStatementCallback<Integer> getSinglePreparedStatementCallback(final Object[] params) {
-        return ps -> {
+
+    public <T> List<T> queryForList(final String sql,final RowMapper<T> rowMapper, final Object... params) {
+        return execute(sql, ps -> {
+            setPreparedStatementParams(params, ps);
+            return extractList(rowMapper, ps);
+        });
+    }
+
+    public int update(final String sql,final Object... params) {
+        return execute(sql, ps -> {
             setPreparedStatementParams(params, ps);
             return ps.executeUpdate();
-        };
+        });
+    }
+
+    private  <T> List<T> extractList(RowMapper<T> rowMapper, PreparedStatement ps)
+            throws SQLException {
+        List<T> results = new ArrayList<>();
+        try (ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                results.add(rowMapper.mapRow(rs));
+            }
+        }
+        return results;
     }
 
     private void setPreparedStatementParams(final Object[] params, final PreparedStatement ps) throws SQLException {
