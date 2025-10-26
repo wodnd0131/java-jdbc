@@ -48,7 +48,7 @@ public class UserService {
                 conn.setAutoCommit(false);
                 action.run();
                 conn.commit();
-            } catch (SQLException e) {
+            } catch (Exception e) {
                 try {
                     conn.rollback();
                 } catch (SQLException ex) {
@@ -57,12 +57,15 @@ public class UserService {
                 throw new DataAccessException("Transaction failed: " + e.getMessage());
             } finally {
                 try {
+                    conn.setAutoCommit(true);
                     conn.close();
                 } catch (SQLException e) {
                     log.error("Connection Close failed: {}", e.getMessage());
                 }
                 connectionManager.setConnection(null);
             }
+        } else {
+            throw new DataAccessException("No connection available for transaction");
         }
     }
 }
