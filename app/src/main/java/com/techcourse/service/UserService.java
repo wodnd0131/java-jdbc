@@ -52,7 +52,7 @@ public class UserService {
                 try {
                     conn.rollback();
                 } catch (SQLException ex) {
-                    log.error("Rollback failed: {}", e.getMessage());
+                    log.error("Rollback failed: {}", ex.getMessage());
                 }
                 throw new DataAccessException("Transaction failed: " + e.getMessage());
             } finally {
