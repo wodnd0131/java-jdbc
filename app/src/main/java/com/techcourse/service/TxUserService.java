@@ -6,7 +6,7 @@ import javax.sql.DataSource;
 
 public class TxUserService implements UserService {
 
-    private TransactionTemplate transactionTemplate;
+    private final TransactionTemplate transactionTemplate;
     private final UserService userService;
 
     public TxUserService(final UserService userService, final DataSource dataSource) {

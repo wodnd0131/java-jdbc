@@ -13,30 +13,32 @@ public abstract class TransactionSynchronizationManager {
     private TransactionSynchronizationManager() {
     }
 
-    public static Connection getResource(DataSource key) {
-        Map<DataSource, Connection> map = resources.get();
-        if (map == null) {
-            return null;
-        }
+    public static Connection getResource(final DataSource key) {
+        final var map = getDataSourceConnectionMap();
 
         return map.get(key);
     }
 
-    public static void bindResource(DataSource key, Connection value) {
-        Map<DataSource, Connection> map = resources.get();
-        if (map == null) {
-            map = new HashMap<>();
-            resources.set(map);
-        }
+    public static void bindResource(final DataSource key, final Connection value) {
+        final var map = getDataSourceConnectionMap();
 
         map.put(key, value);
     }
 
-    public static Connection unbindResource(DataSource key) throws SQLException {
-        Map<DataSource, Connection> map = resources.get();
+    public static Connection unbindResource(final DataSource key) throws SQLException {
+        final var map = resources.get();
         if (map == null) {
             return key.getConnection();
         }
         return map.remove(key);
+    }
+
+    private static Map<DataSource, Connection> getDataSourceConnectionMap() {
+        Map<DataSource, Connection> dataSourceConnectionMap = resources.get();
+        if (dataSourceConnectionMap == null) {
+            dataSourceConnectionMap = new HashMap<>();
+            resources.set(dataSourceConnectionMap);
+        }
+        return dataSourceConnectionMap;
     }
 }

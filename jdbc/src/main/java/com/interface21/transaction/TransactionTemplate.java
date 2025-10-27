@@ -16,7 +16,7 @@ public class TransactionTemplate {
 
     private final DataSource dataSource;
 
-    public TransactionTemplate(DataSource dataSource) {
+    public TransactionTemplate(final DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
