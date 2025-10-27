@@ -15,22 +15,21 @@ public abstract class TransactionSynchronizationManager {
 
     public static Connection getResource(final DataSource key) {
         final var map = getDataSourceConnectionMap();
-
         return map.get(key);
     }
 
     public static void bindResource(final DataSource key, final Connection value) {
         final var map = getDataSourceConnectionMap();
-
         map.put(key, value);
     }
 
     public static Connection unbindResource(final DataSource key) throws SQLException {
-        final var map = resources.get();
-        if (map == null) {
-            return key.getConnection();
+        final var map = getDataSourceConnectionMap();
+        final var connection = map.get(key);
+        if (connection != null) {
+            return map.remove(key);
         }
-        return map.remove(key);
+        return null;
     }
 
     private static Map<DataSource, Connection> getDataSourceConnectionMap() {

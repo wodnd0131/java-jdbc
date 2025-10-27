@@ -19,7 +19,9 @@ public abstract class DataSourceUtils {
         }
 
         try {
-            return dataSource.getConnection();
+            final var newConnection = dataSource.getConnection();
+            TransactionSynchronizationManager.bindResource(dataSource, newConnection);
+            return newConnection;
         } catch (SQLException ex) {
             throw new CannotGetJdbcConnectionException("Failed to obtain JDBC Connection", ex);
         }

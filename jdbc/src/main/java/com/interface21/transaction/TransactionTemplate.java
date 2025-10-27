@@ -22,7 +22,6 @@ public class TransactionTemplate {
 
     public <T> T execute(final TransactionCallback<T> callback) {
         final var conn = DataSourceUtils.getConnection(dataSource);
-        TransactionSynchronizationManager.bindResource(dataSource, conn);
         try {
             return commit(callback, conn);
         } catch (Exception e) {
@@ -51,7 +50,7 @@ public class TransactionTemplate {
     private void close(final DataSource dataSource) {
         try {
             final var connection = TransactionSynchronizationManager.unbindResource(dataSource);
-            connection.setAutoCommit(false);
+            connection.setAutoCommit(true);
             connection.close();
         } catch (SQLException e) {
             throw new DataAccessException("Connect Close failed: " + e.getMessage(), e);
