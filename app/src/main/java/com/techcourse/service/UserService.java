@@ -1,12 +1,16 @@
 package com.techcourse.service;
 
 import com.interface21.dao.DataAccessException;
-import com.interface21.jdbc.datasource.ConnectionManager;
+import com.interface21.jdbc.datasource.DataSourceUtils;
+import com.interface21.transaction.support.TransactionSynchronizationManager;
+import com.techcourse.config.DataSourceConfig;
 import com.techcourse.dao.UserDao;
 import com.techcourse.dao.UserHistoryDao;
 import com.techcourse.domain.User;
 import com.techcourse.domain.UserHistory;
+import java.sql.Connection;
 import java.sql.SQLException;
+import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,33 +43,37 @@ public class UserService {
         });
     }
 
-    public void runInTransaction(Runnable action) {
-        final var connectionManager = ConnectionManager.getInstance();
-        final var connection = connectionManager.getConnection();
-        if (connection.isPresent()) {
-            final var conn = connection.get();
-            try {
-                conn.setAutoCommit(false);
-                action.run();
-                conn.commit();
-            } catch (Exception e) {
-                try {
-                    conn.rollback();
-                } catch (SQLException ex) {
-                    log.error("Rollback failed: {}", ex.getMessage());
-                }
-                throw new DataAccessException("Transaction failed: " + e.getMessage());
-            } finally {
-                try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException e) {
-                    log.error("Connection Close failed: {}", e.getMessage());
-                }
-                connectionManager.setConnection(null);
-            }
-        } else {
-            throw new DataAccessException("No connection available for transaction");
+    public void runInTransaction(final Runnable action) {
+        final var dataSource = DataSourceConfig.getInstance();
+        final var conn = DataSourceUtils.getConnection(dataSource);
+        TransactionSynchronizationManager.bindResource(dataSource, conn);
+        try {
+            conn.setAutoCommit(false);
+            action.run();
+            conn.commit();
+        } catch (Exception e) {
+            rollbackConnection(conn);
+            throw new DataAccessException("Transaction failed: " + e.getMessage(), e);
+        } finally {
+            closeConnect(dataSource);
+        }
+    }
+
+    private void closeConnect(DataSource dataSource) {
+        try {
+            Connection connection = TransactionSynchronizationManager.unbindResource(dataSource);
+            connection.setAutoCommit(false);
+            connection.close();
+        } catch (SQLException e) {
+            throw new DataAccessException("Connect Close failed: " + e.getMessage(), e);
+        }
+    }
+
+    private void rollbackConnection(Connection conn) {
+        try {
+            conn.rollback();
+        } catch (SQLException ex) {
+            log.error("Rollback failed: {}", ex.getMessage(), ex);
         }
     }
 }
