@@ -28,7 +28,7 @@ public class TransactionTemplate {
             rollback(conn);
             throw new DataAccessException("Transaction failed: " + e.getMessage(), e);
         } finally {
-            close(dataSource);
+            close();
         }
     }
 
@@ -40,18 +40,22 @@ public class TransactionTemplate {
     }
 
     private void rollback(final Connection conn) {
-        try {
-            conn.rollback();
-        } catch (SQLException ex) {
-            log.error("Rollback failed: {}", ex.getMessage(), ex);
+        if (conn != null) {
+            try {
+                conn.rollback();
+            } catch (SQLException ex) {
+                log.error("Rollback failed: {}", ex.getMessage(), ex);
+            }
         }
     }
 
-    private void close(final DataSource dataSource) {
+    private void close() {
         try {
             final var connection = TransactionSynchronizationManager.unbindResource(dataSource);
-            connection.setAutoCommit(true);
-            connection.close();
+            if (connection != null) {
+                connection.setAutoCommit(true);
+                connection.close();
+            }
         } catch (SQLException e) {
             throw new DataAccessException("Connect Close failed: " + e.getMessage(), e);
         }

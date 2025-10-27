@@ -29,7 +29,7 @@ public abstract class TransactionSynchronizationManager {
         if (connection != null) {
             return map.remove(key);
         }
-        return null;
+        return connection;
     }
 
     private static Map<DataSource, Connection> getDataSourceConnectionMap() {
